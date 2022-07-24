@@ -8,6 +8,8 @@ namespace Untranslatable.Data
 {
     public class WordsRepository : IWordsRepository
     {
+        private static readonly Random random = new((int)DateTime.Now.Ticks);
+
         private readonly Lazy<WordsDataSource> dataSource;
 
         public WordsRepository(IOptions<WordsRepositorySettings> wordsRepositorySettings)
@@ -25,6 +27,12 @@ namespace Untranslatable.Data
             return DataSource.Words.ContainsKey(language)
                 ? DataSource.Words[language].ToArray()
                 : Enumerable.Empty<UntranslatableWord>();
+        }
+
+        public UntranslatableWord GetRandom(CancellationToken cancellationToken = default)
+        {
+            var nextIndex = random.Next(DataSource.AllWords.Count());
+            return DataSource.AllWords.ElementAt(nextIndex);
         }
     }
 }

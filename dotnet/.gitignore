@@ -1,5 +1,7 @@
-.vscode
-.vs
+*.vscode
+*.vs
 
-bin\
-obj\
+*.suo
+
+[Bb]in\
+[Oo]bj\

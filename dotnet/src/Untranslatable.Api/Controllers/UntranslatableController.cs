@@ -26,5 +26,14 @@ namespace Untranslatable.Api.Controllers
             var result = allWords.Select(w => w.ToDto()).ToArray();
             return Ok(result);
         }
+
+        [HttpGet]
+        [Route("random")]
+        public ActionResult<UntranslatableWordDto> GetRandom(CancellationToken cancellationToken = default)
+        {
+            var word = wordsRepository.GetRandom(cancellationToken);
+
+            return Ok(word.ToDto());
+        }
     }
 }
