@@ -1,3 +1,0 @@
-include LICENSE
-include setup.cfg
-include pyproject.toml
