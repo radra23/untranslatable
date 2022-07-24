@@ -1,0 +1,11 @@
+C:\Users\VL\source\repos\untranslatable\dotnet\src\Untranslatable.Data\obj\Debug\netstandard2.1\Untranslatable.Data.csproj.AssemblyReference.cache
+C:\Users\VL\source\repos\untranslatable\dotnet\src\Untranslatable.Data\obj\Debug\netstandard2.1\Untranslatable.Data.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\VL\source\repos\untranslatable\dotnet\src\Untranslatable.Data\obj\Debug\netstandard2.1\Untranslatable.Data.AssemblyInfoInputs.cache
+C:\Users\VL\source\repos\untranslatable\dotnet\src\Untranslatable.Data\obj\Debug\netstandard2.1\Untranslatable.Data.AssemblyInfo.cs
+C:\Users\VL\source\repos\untranslatable\dotnet\src\Untranslatable.Data\obj\Debug\netstandard2.1\Untranslatable.Data.csproj.CoreCompileInputs.cache
+C:\Users\VL\source\repos\untranslatable\dotnet\src\Untranslatable.Data\bin\Debug\netstandard2.1\content\words.json
+C:\Users\VL\source\repos\untranslatable\dotnet\src\Untranslatable.Data\bin\Debug\netstandard2.1\Untranslatable.Data.deps.json
+C:\Users\VL\source\repos\untranslatable\dotnet\src\Untranslatable.Data\bin\Debug\netstandard2.1\Untranslatable.Data.dll
+C:\Users\VL\source\repos\untranslatable\dotnet\src\Untranslatable.Data\bin\Debug\netstandard2.1\Untranslatable.Data.pdb
+C:\Users\VL\source\repos\untranslatable\dotnet\src\Untranslatable.Data\obj\Debug\netstandard2.1\Untranslatable.Data.dll
+C:\Users\VL\source\repos\untranslatable\dotnet\src\Untranslatable.Data\obj\Debug\netstandard2.1\Untranslatable.Data.pdb

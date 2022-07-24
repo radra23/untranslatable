@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{06A1A931-BBD8-4686-850A-17B758463575}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Untranslatable.Api", "src\Untranslatable.Api\Untranslatable.Api.csproj", "{53BCEA9B-EA65-48D5-B93C-266FB6F0049A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C1064D87-4302-43DB-BEA6-B6800C251461}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		Directory.build.props = Directory.build.props
+		global.json = global.json
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Untranslatable.Data", "src\Untranslatable.Data\Untranslatable.Data.csproj", "{6260ADD9-F5BC-493A-A508-88BF3DB6202C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{53BCEA9B-EA65-48D5-B93C-266FB6F0049A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53BCEA9B-EA65-48D5-B93C-266FB6F0049A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53BCEA9B-EA65-48D5-B93C-266FB6F0049A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53BCEA9B-EA65-48D5-B93C-266FB6F0049A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6260ADD9-F5BC-493A-A508-88BF3DB6202C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6260ADD9-F5BC-493A-A508-88BF3DB6202C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6260ADD9-F5BC-493A-A508-88BF3DB6202C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6260ADD9-F5BC-493A-A508-88BF3DB6202C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{53BCEA9B-EA65-48D5-B93C-266FB6F0049A} = {06A1A931-BBD8-4686-850A-17B758463575}
+		{6260ADD9-F5BC-493A-A508-88BF3DB6202C} = {06A1A931-BBD8-4686-850A-17B758463575}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3DDDFEA4-8A43-49A6-8629-08E22B72692A}
+	EndGlobalSection
+EndGlobal
