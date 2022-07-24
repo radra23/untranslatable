@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Untranslatable.Api;
+using Untranslatable.Shared.Monitoring;
+
+Metrics.App.Start.Add(1);
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Environment.ConfigureContentPath();
@@ -30,3 +33,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+Metrics.App.Stop.Add(1);
