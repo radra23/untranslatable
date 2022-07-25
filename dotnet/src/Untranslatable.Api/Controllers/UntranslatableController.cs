@@ -20,7 +20,7 @@ namespace Untranslatable.Api.Controllers
         {
             this.wordsRepository = wordsRepository;
         }
-
+        
         [HttpGet]
         public ActionResult<UntranslatableWordDto> Get([FromQuery] string language = null, CancellationToken cancellationToken = default)
         {
