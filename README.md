@@ -15,3 +15,15 @@ In this repo, we will instrument two APIs using [OpenTelemetry](https://opentele
 Different programming languages have different challenges, so we’ve selected examples in two languages, Python and .NET, to demonstrate the consistency of OpenTelemetry across stacks. With OTel, we will perform tracing operations and use auto-instrumentation. Not all frameworks offer automatic instrumentation, but OpenTelemetry advises using it for those that do. Not only does it saves you time, but it provides a baseline for telemetry fast. Auto-instrumentation works by attaching an agent to the running application and extracting tracing data, much like a sidecar. If considering auto-instrumentation, remember that it lacks the flexibility of manual instrumentation and only captures basic signals.
 
 [Jaeger](https://www.jaegertracing.io/) is a popular open-source distributed tracing tool initially built by teams at Uber, later being open-sourced and becoming part of the CNCF family. Works as a backend application for trace signals visualization and collection, allowing developers to visualize request traces through services in a system domain. Jaeger provides [instrumentation libraries](https://opentelemetry.io/docs/reference/specification/trace/sdk_exporters/jaeger/) built using OpenTracing standards that can offer a quick win on observing your application. In this repo, we will use the OTel exporter and OpenTelemetry's Jaeger exporter to send OTel traces to a Jaeger backend service.
+
+<br>
+<br>
+<br>
+<br>
+---
+
+## Contributors
+
+<a href = "https://github.com/Tanu-N-Prabhu/Python/graphs/contributors">
+<img src = "https://contrib.rocks/image?repo=radra23/untranslatable"/>
+</a>
