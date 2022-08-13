@@ -1,0 +1,29 @@
+version: "3.5"
+services:
+  jaeger:
+    networks:
+      - backend
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
+  otel_collector:
+    networks:
+      - backend
+    image: otel/opentelemetry-collector:latest
+    volumes:
+      - "/Users/joanacarvalho/Documents/Projects/untranslatable/python/otel-collector-config copy.yml:/etc/otelcol/otel-collector-config.yml"
+    command: --config /etc/otelcol/otel-collector-config.yml
+    environment:
+      - OTEL_EXPORTER_JAEGER_GRPC_INSECURE:true
+    ports:
+      - "1888:1888" # pprof extension
+      - "13133:13133" # health_check extension
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+      - "55670:55679" # zpages extension
+    depends_on:
+      - jaeger
+networks:
+  backend:
