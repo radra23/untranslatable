@@ -13,7 +13,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from data.file_reader import read_json_from_file
 
-resource = Resource(attributes={SERVICE_NAME: "unstranslatable-python"})
+resource = Resource(attributes={SERVICE_NAME: "untranslatable-python"})
 jaeger_exporter = JaegerExporter(
     agent_host_name="localhost",
     agent_port=6831,
@@ -48,14 +48,13 @@ word_counter = meter.create_counter(
 @app.route("/home")
 @app.route("/index")
 def index():
-    return Response("Welcome to Unstranslatable!", status=200)
+    return Response("Welcome to untranslatable!", status=200)
 
 
 @app.route("/words/random", methods=["GET"])
 def word_random():
     with tracer.start_as_current_span("random-word"):
-        data = read_json_from_file()
-        words = json.dumps(data, ensure_ascii=False)
+        words = read_json_from_file()
         random_word = random.choice(words)
 
     word_counter.add(
@@ -69,8 +68,7 @@ def word_random():
 def words_language():
     with tracer.start_as_current_span("word-by-language"):
         language = request.args.get("language")
-        data = read_json_from_file()
-        words = json.dumps(data, ensure_ascii=False)
+        words = read_json_from_file()
         words_for_language = [word for word in words if word["language"] == language]
 
         word_counter.add(len(words_for_language), words_for_language)
