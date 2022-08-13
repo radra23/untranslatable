@@ -1,13 +1,13 @@
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Untranslatable.Api;
-using Untranslatable.Shared.Monitoring;
-using OpenTelemetry.Trace;
 using Microsoft.Extensions.Options;
-using Untranslatable.Api.Monitoring;
-using System;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Untranslatable.Api;
+using Untranslatable.Api.Monitoring;
+using Untranslatable.Shared.Monitoring;
 
 Metrics.App.Start.Add(1);
 
@@ -22,20 +22,21 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var serviceName = "unstranslatable-dotnet";
+var resource = ResourceBuilder.CreateDefault().AddService(serviceName);
 builder.Services.AddOpenTelemetryTracing(b => b
-    .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("unstranslatable-dotnet"))
+    .SetResourceBuilder(resource)
+    .AddSource(serviceName)
     .AddAspNetCoreInstrumentation()
     .AddJaegerExporter(o =>
     {
-        var sp=b.GetServices().BuildServiceProvider();
-        var ms=sp.GetRequiredService<IOptions<MonitoringSettings>>();
+        var sp = b.GetServices().BuildServiceProvider();
+        var ms = sp.GetRequiredService<IOptions<MonitoringSettings>>();
         o.AgentHost = ms.Value.Hostname;
-        o.AgentPort = ms.Value.Port; // use port number here
+        o.AgentPort = ms.Value.Port;
         o.Endpoint = new Uri(ms.Value.CollectorEndpoint);
     })
-
-    // The rest of your setup code goes here too
-);
+).AddSingleton(TracerProvider.Default.GetTracer(serviceName));
 
 var app = builder.Build();
 
@@ -46,7 +47,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(o => o.EnableTryItOutByDefault());
 }
 
-app.UseCors();
 app.UseAuthorization();
 
 app.MapControllers();

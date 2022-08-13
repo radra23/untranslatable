@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
 using System.Reflection;
-
 namespace Untranslatable.Shared.Monitoring
 {
     public static class Metrics
@@ -18,6 +17,8 @@ namespace Untranslatable.Shared.Monitoring
             public static TimeMeasurement WordsTime = MetricsFactory.TimeMeasurement("app_requests_words_by_language_time", "The number of times the endpoint /words is called.");
             public static Counter<int> WordRandom = MetricsFactory.Counter("app_requests__word_random_counter", "The number of times the endpoint /words/random is called.");
             public static TimeMeasurement WordRandomTime = MetricsFactory.TimeMeasurement("app_requests_word_random_time", "The number of times the endpoint /words/random is called.");
+
+
         }
 
         private static class MetricsFactory

@@ -6,9 +6,12 @@ namespace Untranslatable.Api
 {
     public static class HostEnvironmentExtensions
     {
-        public static void ConfigureContentPath(this IHostEnvironment hostEnvironment)
+        public static void ConfigureContentPath(
+            this IHostEnvironment hostEnvironment
+        )
         {
-            var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var path =
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
             hostEnvironment.ContentRootPath = path;
             Directory.SetCurrentDirectory(path);
