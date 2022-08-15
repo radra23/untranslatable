@@ -25,6 +25,6 @@ Different programming languages have different challenges, so we’ve selected e
 
 ## Contributors
 
-<a href = "https://github.com/Tanu-N-Prabhu/Python/graphs/contributors">
+<a href = "https://github.com/radra23/untranslatable/graphs/contributors">
 <img src = "https://contrib.rocks/image?repo=radra23/untranslatable"/>
 </a>
