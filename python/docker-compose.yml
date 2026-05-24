@@ -15,7 +15,7 @@ services:
       - backend
     image: otel/opentelemetry-collector:latest
     volumes:
-      - "/Users/joanacarvalho/Documents/Projects/untranslatable/python/otel-collector-config.yml:/etc/otelcol/otel-collector-config.yml"
+      - "./otel-collector-config.yml:/etc/otelcol/otel-collector-config.yml"
     command: --config /etc/otelcol/otel-collector-config.yml
     environment:
       - OTEL_EXPORTER_JAEGER_GRPC_INSECURE:true
