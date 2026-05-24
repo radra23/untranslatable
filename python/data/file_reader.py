@@ -1,20 +1,25 @@
-from os.path import dirname, join
-from opentelemetry import trace
 import json
+from functools import lru_cache
+from os.path import dirname, join
+
+from opentelemetry import trace
 
 tracer = trace.get_tracer(__name__)
-ctx = trace.get_current_span().get_span_context()
-
-link_from_current = trace.Link(ctx)
+_DATA_FILE = join(dirname(__file__), "data.json")
 
 
-def read_json_from_file():
-    here = dirname(__file__)
-    with tracer.start_as_current_span(
-        "read_json_from_file", links=[link_from_current]
-    ) as current_span:
-        current_span.add_event("Opening data file.")
-        with open(join(here, "./data.json"), encoding="utf-8") as f:
-            data = json.loads(f.read())
-        current_span.add_event("Finished reading data file.")
+@lru_cache(maxsize=1)
+def _load_data() -> list:
+    """Load words from the JSON file.  Called once per process; result is cached."""
+    with open(_DATA_FILE, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def read_json_from_file() -> list:
+    """Return the cached word list, wrapped in an OTel span."""
+    with tracer.start_as_current_span("read_json_from_file") as span:
+        span.add_event("Loading words from data store.")
+        data = _load_data()
+        span.set_attribute("words.count", len(data))
+        span.add_event("Words loaded successfully.")
     return data
