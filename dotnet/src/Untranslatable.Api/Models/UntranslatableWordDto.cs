@@ -1,9 +1,10 @@
-﻿namespace Untranslatable.Api.Models
+namespace Untranslatable.Api.Models
 {
-    public class UntranslatableWordDto
+    /// <summary>API response DTO for an untranslatable word.</summary>
+    public record UntranslatableWordDto
     {
-        public string Language { get; set; }
-        public string Word { get; set; }
-        public string Meaning { get; set; }
+        public string Language { get; init; } = string.Empty;
+        public string Word { get; init; } = string.Empty;
+        public string Meaning { get; init; } = string.Empty;
     }
 }
