@@ -1,34 +1,59 @@
-"""
-Data access layer for untranslatable words.
+"""Data access layer for untranslatable words.
 
-WordsRepository wraps the cached file loader with domain-level query
+``WordsRepository`` wraps the cached file loader with domain-level query
 operations. All data is loaded from disk once and kept in memory for the
-lifetime of the process, so every method here is effectively O(n) in-memory
+lifetime of the process, so every method is effectively O(n) in-memory
 filtering — suitable for the current dataset size.
 """
 
+from __future__ import annotations
+
 import random
-from typing import List, Optional
 
 from data.file_reader import read_json_from_file
 
 
 class WordsRepository:
-    """Provides read access to the untranslatable-word dataset."""
+    """Read-only access to the untranslatable-word dataset.
 
-    def get_all(self) -> List[dict]:
-        """Return every word in the dataset."""
+    All data is loaded from disk on first access and cached in memory.
+    The class is stateless; a single shared instance is safe across threads.
+    """
+
+    def get_all(self) -> list[dict]:
+        """Return every word in the dataset.
+
+        Returns
+        -------
+        list of dict
+            All words, each with ``language``, ``word``, and ``meaning`` keys.
+        """
         return read_json_from_file()
 
-    def get_by_language(self, language: str) -> List[dict]:
-        """Return all words whose language code matches *language* exactly."""
+    def get_by_language(self, language: str) -> list[dict]:
+        """Return all words for a given language code.
+
+        Parameters
+        ----------
+        language : str
+            ISO 639-1 language code (e.g. ``"pt"``, ``"de"``).
+
+        Returns
+        -------
+        list of dict
+            Matching words, or an empty list if the code is not found.
+        """
         return [w for w in self.get_all() if w["language"] == language]
 
-    def get_random(self) -> Optional[dict]:
+    def get_random(self) -> dict | None:
         """Return a single word chosen uniformly at random.
 
-        Returns ``None`` only when the dataset is completely empty —
-        callers should treat that as a 503.
+        Returns
+        -------
+        dict or None
+            A word dict with ``language``, ``word``, and ``meaning`` keys,
+            or ``None`` if the dataset is empty (callers should treat this
+            as a 503 condition).
         """
         words = self.get_all()
         return random.choice(words) if words else None
