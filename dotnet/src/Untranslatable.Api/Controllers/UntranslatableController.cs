@@ -1,11 +1,10 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using Microsoft.AspNetCore.Mvc;
-using OpenTelemetry.Trace;
 using Untranslatable.Api.Controllers.Extensions;
 using Untranslatable.Api.Models;
+using Untranslatable.Api.Monitoring;
 using Untranslatable.Data;
-using Untranslatable.Shared.Monitoring;
 
 namespace Untranslatable.Api.Controllers
 {
@@ -14,53 +13,42 @@ namespace Untranslatable.Api.Controllers
     [Produces("application/json")]
     public class WordsController : ControllerBase
     {
-        private readonly IWordsRepository wordsRepository;
-        private readonly Tracer tracer;
+        private readonly IWordsRepository _wordsRepository;
+        private readonly IWordsTelemetry _telemetry;
 
-        public WordsController(Tracer tracer, IWordsRepository wordsRepository)
+        // IWordsTelemetry is injected — the controller has no knowledge of OTel.
+        // If OTel is unavailable, the DI container provides a NullWordsTelemetry.
+        public WordsController(IWordsRepository wordsRepository, IWordsTelemetry telemetry)
         {
-            this.wordsRepository = wordsRepository;
-            this.tracer = tracer;
+            _wordsRepository = wordsRepository;
+            _telemetry = telemetry;
         }
 
         [HttpGet]
-        public ActionResult<UntranslatableWordDto> Get([FromQuery] string language = null, CancellationToken cancellationToken = default)
+        public ActionResult<UntranslatableWordDto[]> Get(
+            [FromQuery] string? language = null,
+            CancellationToken cancellationToken = default)
         {
-            using var span = this.tracer?.StartActiveSpan("GetWordByLanguage");
+            using var op = _telemetry.BeginGetByLanguage(language);
 
-            Metrics.Endpoints.WordsCounter.Add(1);
-            using (Metrics.Endpoints.WordsTime.StartTimer())
-            {
-                var allWords = Enumerable.Empty<UntranslatableWord>();
-                using (var childSpan1 = tracer.StartActiveSpan("GetByLanguageFromRepository"))
-                {
-                    childSpan1.AddEvent("Started loading words from file...");
-                    allWords = wordsRepository.GetByLanguage(language, cancellationToken);
-                    childSpan1.AddEvent("Finished loading words from file...");
-                }
-                using (tracer.StartActiveSpan("WordsToArray"))
-                {
-                    var result = allWords.Select(w => w.ToDto()).ToArray();
-                    return Ok(result);
-                }
-            }
+            var result = _wordsRepository
+                .GetByLanguage(language, cancellationToken)
+                .Select(w => w.ToDto())
+                .ToArray();
+
+            _telemetry.RecordWordsReturned(language ?? "all", result.Length);
+            return Ok(result);
         }
 
-        [HttpGet]
-        [Route("random")]
-        public ActionResult<UntranslatableWordDto> GetRandom(CancellationToken cancellationToken = default)
+        [HttpGet("random")]
+        public ActionResult<UntranslatableWordDto> GetRandom(
+            CancellationToken cancellationToken = default)
         {
-            using var span = this.tracer?.StartActiveSpan("GetRandomWord");
+            using var op = _telemetry.BeginGetRandom();
 
-            Metrics.Endpoints.WordRandom.Add(1);
-            using (Metrics.Endpoints.WordRandomTime.StartTimer())
-            {
-                span.AddEvent("GetRandomWord");
-                var word = wordsRepository.GetRandom(cancellationToken);
-                span.AddEvent("Done select Random Word");
-
-                return Ok(word.ToDto());
-            }
+            var word = _wordsRepository.GetRandom(cancellationToken);
+            _telemetry.RecordRandomWordReturned(word?.Language ?? string.Empty);
+            return Ok(word.ToDto());
         }
     }
 }
