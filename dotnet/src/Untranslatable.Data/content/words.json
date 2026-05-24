@@ -1,32 +1,82 @@
-﻿[
+[
   {
     "language": "it",
     "word": "abbiocco",
-    "meaning": "noun: that sleepy feeling you get after a big meal"
+    "meaning": "noun: the drowsy, contented feeling you get after a big meal"
   },
   {
     "language": "pt",
     "word": "desenrascanço",
-    "meaning": "noun: the ability to improvise a quick solution"
+    "meaning": "noun: the ability to improvise a creative solution out of nothing"
   },
   {
     "language": "da",
     "word": "hyggelig",
-    "meaning": "adj.: comfy, cozy; intimate; contented"
+    "meaning": "adj.: cozy, convivial, and contented; the warmth of togetherness"
   },
   {
     "language": "es",
     "word": "sobremesa",
-    "meaning": "noun: after-lunch conversation around the table"
+    "meaning": "noun: the leisurely conversation that lingers at the table after a meal"
   },
   {
     "language": "nn",
     "word": "utepils",
-    "meaning": "noun: a beer you drink outside"
+    "meaning": "noun: a beer you drink outside, especially on the first warm day of the year"
   },
   {
     "language": "de",
     "word": "Verschlimmbessern",
-    "meaning": "verb: to make something worse when trying to improve it"
+    "meaning": "verb: to make something worse in the process of trying to improve it"
+  },
+  {
+    "language": "ja",
+    "word": "木漏れ日 (komorebi)",
+    "meaning": "noun: the interplay of sunlight filtering through leaves"
+  },
+  {
+    "language": "fi",
+    "word": "sisu",
+    "meaning": "noun: inner strength, stoic determination, and resilience in the face of adversity"
+  },
+  {
+    "language": "sv",
+    "word": "lagom",
+    "meaning": "adj./adv.: not too much, not too little — just the right amount"
+  },
+  {
+    "language": "pt",
+    "word": "saudade",
+    "meaning": "noun: a melancholic longing for something loved and now gone"
+  },
+  {
+    "language": "de",
+    "word": "Fernweh",
+    "meaning": "noun: an ache for distant places; the opposite of homesickness"
+  },
+  {
+    "language": "nl",
+    "word": "gezelligheid",
+    "meaning": "noun: the quality of being cozy, convivial, and belonging — felt rather than described"
+  },
+  {
+    "language": "ja",
+    "word": "侘寂 (wabi-sabi)",
+    "meaning": "noun: finding beauty in imperfection, transience, and incompleteness"
+  },
+  {
+    "language": "fr",
+    "word": "dépaysement",
+    "meaning": "noun: the disorienting feeling of being a foreigner; being out of your element"
+  },
+  {
+    "language": "de",
+    "word": "Weltschmerz",
+    "meaning": "noun: a deep world-weariness born from comparing how the world is to how it ought to be"
+  },
+  {
+    "language": "is",
+    "word": "þetta reddast",
+    "meaning": "phrase: it will all work out — an Icelandic expression of calm optimism"
   }
 ]
