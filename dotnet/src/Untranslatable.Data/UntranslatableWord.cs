@@ -1,11 +1,10 @@
-﻿using System;
-
 namespace Untranslatable.Data
 {
-    public class UntranslatableWord
+    /// <summary>Domain model for an untranslatable word from the JSON data file.</summary>
+    public record UntranslatableWord
     {
-        public string Language { get; set; }
-        public string Word { get; set; }
-        public string Meaning { get; set; }
+        public string Language { get; init; } = string.Empty;
+        public string Word { get; init; } = string.Empty;
+        public string Meaning { get; init; } = string.Empty;
     }
 }
