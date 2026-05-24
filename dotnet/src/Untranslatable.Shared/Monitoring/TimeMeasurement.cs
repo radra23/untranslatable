@@ -1,32 +1,36 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 namespace Untranslatable.Shared.Monitoring
 {
-    public class TimeMeasurement : IDisposable
+    /// <summary>
+    /// Wraps a <see cref="Stopwatch"/> and records elapsed milliseconds into
+    /// an OTel <see cref="Histogram{T}"/> on <see cref="Dispose"/>.
+    /// </summary>
+    public sealed class TimeMeasurement : IDisposable
     {
-        private Stopwatch stopwatch;
-        private readonly Histogram<int> histogram;
+        private Stopwatch? _stopwatch;
+        private readonly Histogram<double> _histogram;
 
-        public TimeMeasurement(Histogram<int> histogram)
-        {
-            this.histogram = histogram;
-        }
+        public TimeMeasurement(Histogram<double> histogram) =>
+            _histogram = histogram;
 
-        public int GetTime() => (int)(this.stopwatch?.Elapsed.TotalSeconds ?? 0);
-
+        /// <summary>Start the timer and return <c>this</c> for use in a <c>using</c> block.</summary>
         public IDisposable StartTimer()
         {
-            this.stopwatch = Stopwatch.StartNew();
+            _stopwatch = Stopwatch.StartNew();
             return this;
         }
 
+        /// <summary>Elapsed time in milliseconds, or 0 if the timer was never started.</summary>
+        public double ElapsedMs => _stopwatch?.Elapsed.TotalMilliseconds ?? 0;
+
         public void Dispose()
         {
-            this.stopwatch?.Stop();
-            if (this.stopwatch is not null)
-                histogram.Record(GetTime());
+            _stopwatch?.Stop();
+            if (_stopwatch is not null)
+                _histogram.Record(ElapsedMs);
         }
     }
 }
