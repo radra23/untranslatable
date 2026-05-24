@@ -1,84 +1,40 @@
-import json
-import random
+"""
+Application factory for the Untranslatable Flask API.
 
-from flask import Flask, Response, request
-from opentelemetry import metrics, trace
-from opentelemetry.exporter.jaeger.thrift import JaegerExporter
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+Flask's development server discovers ``create_app`` automatically when
+FLASK_APP points at this module (set in .flaskenv).
+"""
+
+import os
+
+from flask import Flask
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from data.file_reader import read_json_from_file
-
-resource = Resource(attributes={SERVICE_NAME: "untranslatable-python"})
-jaeger_exporter = JaegerExporter(
-    agent_host_name="localhost",
-    agent_port=6831,
-    collector_endpoint="http://localhost:14268/api/traces?format=jaeger.thrift",
-)
-
-otlp_exporter = OTLPSpanExporter(endpoint="http://localhost:4317", insecure=True)
-span_processor = BatchSpanProcessor(otlp_exporter)
+import telemetry  # must be imported first — configures OTel providers
+from api.words import words_bp
 
 
-tracer_provider = TracerProvider(resource=resource)
-jaeger_processor = BatchSpanProcessor(jaeger_exporter)
-tracer_provider.add_span_processor(jaeger_processor)
+def create_app() -> Flask:
+    """Create and return a configured Flask application instance."""
+    app = Flask(__name__)
 
-trace.set_tracer_provider(tracer_provider)
-trace.get_tracer_provider().add_span_processor(span_processor)
-tracer = trace.get_tracer(__name__)
-meter = metrics.get_meter(__name__)
+    # Auto-instrumentation must be applied after the OTel providers in
+    # telemetry.py are set up, and before the first request is handled.
+    FlaskInstrumentor().instrument_app(app)
+    RequestsInstrumentor().instrument()
 
-app = Flask(__name__)
+    @app.route("/")
+    @app.route("/home")
+    @app.route("/index")
+    def welcome():
+        return "Welcome to untranslatable!", 200
 
-FlaskInstrumentor().instrument_app(app)
-RequestsInstrumentor().instrument()
+    app.register_blueprint(words_bp)
 
-word_counter = meter.create_counter(
-    "words.counter", description="Counts the number of words returned."
-)
-
-
-@tracer.start_as_current_span("welcome-message")
-@app.route("/")
-@app.route("/home")
-@app.route("/index")
-def index():
-    return Response("Welcome to untranslatable!", status=200)
-
-
-@app.route("/words/random", methods=["GET"])
-def word_random():
-    with tracer.start_as_current_span("random-word"):
-        words = read_json_from_file()
-        random_word = random.choice(words)
-
-    word_counter.add(
-        1, {"word": random_word["word"], "language": random_word["language"]}
-    )
-
-    return Response(random_word, mimetype="application/json", status=200)
-
-
-@app.route("/words", methods=["GET"])
-def words_language():
-    with tracer.start_as_current_span("word-by-language"):
-        language = request.args.get("language")
-        words = read_json_from_file()
-        words_for_language = [word for word in words if word["language"] == language]
-
-        word_counter.add(len(words_for_language), words_for_language)
-
-    return Response(
-        words_for_language,
-        mimetype="application/json",
-        status=200,
-    )
+    return app
 
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    create_app().run(debug=debug, use_reloader=False)
