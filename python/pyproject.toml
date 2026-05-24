@@ -1,3 +1,79 @@
 [build-system]
+requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
-requires = ["setuptools"]
+
+# ---------------------------------------------------------------------------
+# Project metadata  (replaces setup.cfg)
+# ---------------------------------------------------------------------------
+[project]
+name = "untranslatable"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+    "Flask>=3.0.0",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "opentelemetry-api>=1.25.0",
+    "opentelemetry-sdk>=1.25.0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.25.0",
+    "opentelemetry-instrumentation-flask>=0.46b0",
+    "opentelemetry-instrumentation-requests>=0.46b0",
+]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.5.0"]
+
+[project.urls]
+Homepage = "https://github.com/radra23/untranslatable/tree/main/python"
+
+# ---------------------------------------------------------------------------
+# Setuptools — package discovery
+# ---------------------------------------------------------------------------
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["api*", "data*"]
+
+[tool.setuptools.package-data]
+"data" = ["*.json"]
+
+# ---------------------------------------------------------------------------
+# Ruff — linter + formatter
+#
+# Run:  ruff check .          (lint)
+#       ruff check . --fix    (auto-fix)
+#       ruff format .         (format)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade (modernise syntax)
+    "B",   # flake8-bugbear
+    "BLE", # flake8-blind-except
+    "C4",  # flake8-comprehensions
+    "D",   # pydocstyle (NumPy convention configured below)
+]
+# D415: period at end of first line — too noisy for short summaries
+ignore = ["D415"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test files and __init__ stubs don't need full docstrings
+"**/test_*.py" = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.isort]
+known-first-party = ["api", "data", "telemetry"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
