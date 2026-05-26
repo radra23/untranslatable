@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 
-from flask import Flask
+from flask import Flask, jsonify
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
@@ -40,6 +40,17 @@ def create_app() -> Flask:
     def welcome() -> tuple[str, int]:
         """Return a plain-text welcome message."""
         return "Welcome to untranslatable!", 200
+
+    @app.route("/healthz")
+    def healthz() -> tuple[object, int]:
+        """Return application health status.
+
+        Returns
+        -------
+        flask.Response
+            200 — ``{"status": "healthy"}`` when the application is running.
+        """
+        return jsonify({"status": "healthy"}), 200
 
     app.register_blueprint(words_bp)
 

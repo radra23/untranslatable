@@ -41,6 +41,24 @@ def test_welcome_message(client):
 
 
 # ---------------------------------------------------------------------------
+# GET /healthz
+# ---------------------------------------------------------------------------
+
+
+def test_healthz_returns_200(client):
+    assert client.get("/healthz").status_code == 200
+
+
+def test_healthz_response_is_json(client):
+    assert client.get("/healthz").is_json
+
+
+def test_healthz_body_contains_healthy_status(client):
+    data = client.get("/healthz").get_json()
+    assert data == {"status": "healthy"}
+
+
+# ---------------------------------------------------------------------------
 # GET /words/random
 # ---------------------------------------------------------------------------
 
