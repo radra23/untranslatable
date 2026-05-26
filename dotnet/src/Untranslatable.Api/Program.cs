@@ -70,3 +70,6 @@ app.Run();
 // App-stop counter — guarded for the same reason.
 try { Metrics.App.Stop.Add(1); }
 catch { /* telemetry must never crash the application */ }
+
+// Required by WebApplicationFactory<Program> in integration tests.
+public partial class Program { }
