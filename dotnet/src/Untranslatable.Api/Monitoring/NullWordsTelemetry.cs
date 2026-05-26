@@ -8,7 +8,7 @@ namespace Untranslatable.Api.Monitoring
     /// Every member is a guaranteed safe no-op — nothing is recorded,
     /// nothing is thrown.
     /// </summary>
-    internal sealed class NullWordsTelemetry : IWordsTelemetry
+    public sealed class NullWordsTelemetry : IWordsTelemetry
     {
         public static readonly NullWordsTelemetry Instance = new();
         private NullWordsTelemetry() { }
