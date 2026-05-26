@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace Untranslatable.Data
 {
-    public class WordsDataSource : IWordsDataSource
+    public class WordsDataSource
     {
         public WordsDataSource(IDictionary<string, IEnumerable<UntranslatableWord>> words)
         {
