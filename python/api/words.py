@@ -8,7 +8,7 @@ touching the layers below.
 
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, Response, jsonify, request
 
 import telemetry
 from data.repository import WordsRepository
@@ -21,7 +21,7 @@ _repository = WordsRepository()
 
 
 @words_bp.route("/words/random", methods=["GET"])
-def word_random():
+def word_random() -> tuple[Response, int]:
     """Return a single untranslatable word chosen at random.
 
     Returns
@@ -48,7 +48,7 @@ def word_random():
 
 
 @words_bp.route("/words", methods=["GET"])
-def words_by_language():
+def words_by_language() -> tuple[Response, int]:
     """Return untranslatable words, optionally filtered by language.
 
     Query Parameters
