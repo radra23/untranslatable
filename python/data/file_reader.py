@@ -5,15 +5,18 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 from os.path import dirname, join
+from typing import cast
 
 # Import the facade tracer — gracefully degrades to a no-op if OTel is unavailable.
 from telemetry import tracer
+
+from data.types import Word
 
 _DATA_FILE = join(dirname(__file__), "data.json")
 
 
 @lru_cache(maxsize=1)
-def _load_data() -> list:
+def _load_data() -> list[Word]:
     """Load words from the JSON data file.
 
     The result is cached after the first call; the file is read exactly
@@ -21,15 +24,15 @@ def _load_data() -> list:
 
     Returns
     -------
-    list
+    list of Word
         Parsed list of word dicts, each with ``language``, ``word``,
         and ``meaning`` keys.
     """
     with open(_DATA_FILE, encoding="utf-8") as f:
-        return json.load(f)
+        return cast(list[Word], json.load(f))
 
 
-def read_json_from_file() -> list:
+def read_json_from_file() -> list[Word]:
     """Return the cached word list, wrapping the lookup in a best-effort OTel span.
 
     Data access is always guaranteed; the telemetry span is best-effort only.
@@ -38,7 +41,7 @@ def read_json_from_file() -> list:
 
     Returns
     -------
-    list
+    list of Word
         All words from the data file.
     """
     # Fetch data first — the primary operation must never fail due to telemetry.
