@@ -20,12 +20,55 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import Generator
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
+from typing import Protocol
 
 _log = logging.getLogger(__name__)
 
 OTLP_ENDPOINT: str = os.environ.get("OTLP_ENDPOINT", "http://localhost:4317")
 SERVICE_NAME: str = "untranslatable-python"
+
+
+# ---------------------------------------------------------------------------
+# Structural Protocols — define the minimum surface the rest of the app uses.
+# Both the no-op stubs and the real OTel objects satisfy these Protocols
+# through duck typing; no explicit inheritance is required.
+# ---------------------------------------------------------------------------
+
+
+class _SpanLike(Protocol):
+    """Minimum span interface used by application code."""
+
+    def set_attribute(self, key: str, value: object) -> None:
+        """Set a key/value attribute on the span."""
+        ...
+
+    def add_event(self, name: str) -> None:
+        """Add a named event to the span timeline."""
+        ...
+
+
+class _TracerLike(Protocol):
+    """Minimum tracer interface used by application code."""
+
+    def start_as_current_span(
+        self, name: str, **kwargs: object
+    ) -> AbstractContextManager[_SpanLike]:
+        """Start a span and return it as a context manager."""
+        ...
+
+
+class _CounterLike(Protocol):
+    """Minimum counter interface used by application code."""
+
+    def add(self, amount: int, attributes: dict[str, str] | None = None) -> None:
+        """Increment the counter by ``amount``."""
+        ...
+
+
+# ---------------------------------------------------------------------------
+# No-op stubs — used when OTel is unavailable.
+# ---------------------------------------------------------------------------
 
 
 class _NullSpan:
@@ -82,8 +125,12 @@ class _NullCounter:
         """
 
 
-tracer: object = _NullTracer()
-word_counter: object = _NullCounter()
+# ---------------------------------------------------------------------------
+# Module-level facade objects — initially no-ops; replaced by _setup().
+# ---------------------------------------------------------------------------
+
+tracer: _TracerLike = _NullTracer()
+word_counter: _CounterLike = _NullCounter()
 
 
 def _setup() -> None:
@@ -130,7 +177,10 @@ def _setup() -> None:
     )
     _metrics.set_meter_provider(meter_provider)
 
-    tracer = _trace.get_tracer(__name__)
+    # The OTel Tracer stubs use _AgnosticContextManager and specific kwargs
+    # rather than AbstractContextManager/**kwargs, so the structural check
+    # fails even though both satisfy the Protocol at runtime.
+    tracer = _trace.get_tracer(__name__)  # type: ignore[assignment]
     word_counter = _metrics.get_meter(__name__).create_counter(
         "words.requests",
         description="Number of words returned, labelled by language.",
