@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 
-from flask import Flask, jsonify
+from flask import Flask, Response, jsonify
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
@@ -31,7 +31,7 @@ def create_app() -> Flask:
 
     # Auto-instrumentation must be applied after the OTel providers in
     # telemetry.py are set up, and before the first request is handled.
-    FlaskInstrumentor().instrument_app(app)
+    FlaskInstrumentor().instrument_app(app)  # type: ignore[no-untyped-call]
     RequestsInstrumentor().instrument()
 
     @app.route("/")
@@ -42,7 +42,7 @@ def create_app() -> Flask:
         return "Welcome to untranslatable!", 200
 
     @app.route("/healthz")
-    def healthz() -> tuple[object, int]:
+    def healthz() -> tuple[Response, int]:
         """Return application health status.
 
         Returns
