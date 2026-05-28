@@ -11,6 +11,7 @@ from __future__ import annotations
 import random
 
 from data.file_reader import read_json_from_file
+from data.types import Word
 
 
 class WordsRepository:
@@ -20,17 +21,17 @@ class WordsRepository:
     The class is stateless; a single shared instance is safe across threads.
     """
 
-    def get_all(self) -> list[dict]:
+    def get_all(self) -> list[Word]:
         """Return every word in the dataset.
 
         Returns
         -------
-        list of dict
+        list of Word
             All words, each with ``language``, ``word``, and ``meaning`` keys.
         """
         return read_json_from_file()
 
-    def get_by_language(self, language: str) -> list[dict]:
+    def get_by_language(self, language: str) -> list[Word]:
         """Return all words for a given language code.
 
         Parameters
@@ -40,17 +41,17 @@ class WordsRepository:
 
         Returns
         -------
-        list of dict
+        list of Word
             Matching words, or an empty list if the code is not found.
         """
         return [w for w in self.get_all() if w["language"] == language]
 
-    def get_random(self) -> dict | None:
+    def get_random(self) -> Word | None:
         """Return a single word chosen uniformly at random.
 
         Returns
         -------
-        dict or None
+        Word or None
             A word dict with ``language``, ``word``, and ``meaning`` keys,
             or ``None`` if the dataset is empty (callers should treat this
             as a 503 condition).
