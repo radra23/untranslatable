@@ -66,6 +66,22 @@ class _CounterLike(Protocol):
         ...
 
 
+class _LoggerLike(Protocol):
+    """Minimum logger interface used by application code."""
+
+    def info(self, msg: str, *args: object, **kwargs: object) -> None:
+        """Emit an INFO-level log record."""
+        ...
+
+    def warning(self, msg: str, *args: object, **kwargs: object) -> None:
+        """Emit a WARNING-level log record."""
+        ...
+
+    def error(self, msg: str, *args: object, **kwargs: object) -> None:
+        """Emit an ERROR-level log record."""
+        ...
+
+
 # ---------------------------------------------------------------------------
 # No-op stubs — used when OTel is unavailable.
 # ---------------------------------------------------------------------------
@@ -125,12 +141,26 @@ class _NullCounter:
         """
 
 
+class _NullLogger:
+    """Logger that silently discards every call."""
+
+    def info(self, msg: str, *args: object, **kwargs: object) -> None:
+        """Accept and discard an INFO record."""
+
+    def warning(self, msg: str, *args: object, **kwargs: object) -> None:
+        """Accept and discard a WARNING record."""
+
+    def error(self, msg: str, *args: object, **kwargs: object) -> None:
+        """Accept and discard an ERROR record."""
+
+
 # ---------------------------------------------------------------------------
 # Module-level facade objects — initially no-ops; replaced by _setup().
 # ---------------------------------------------------------------------------
 
 tracer: _TracerLike = _NullTracer()
 word_counter: _CounterLike = _NullCounter()
+logger: _LoggerLike = _NullLogger()
 
 
 def _setup() -> None:
