@@ -47,9 +47,7 @@ def word_random() -> tuple[Response, int]:
 
         span.set_attribute("word.language", word["language"])
         span.set_attribute("word.value", word["word"])
-        _log.info(
-            "words/random: served %r (language=%s)", word["word"], word["language"]
-        )
+        _log.info("words/random: served %r (language=%s)", word["word"], word["language"])
 
     try:
         telemetry.word_counter.add(1, {"language": word["language"]})
