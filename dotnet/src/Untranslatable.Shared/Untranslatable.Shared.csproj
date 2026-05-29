@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- net8.0 includes System.Diagnostics in-box -->
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- net9.0 includes System.Diagnostics in-box -->
+    <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
 
-  <!-- System.Diagnostics.DiagnosticSource is bundled with net8.0; no extra package needed -->
+  <!-- System.Diagnostics.DiagnosticSource is bundled with net9.0; no extra package needed -->
 
 </Project>

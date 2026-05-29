@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -18,10 +19,35 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 
-const string serviceName = "untranslatable-dotnet";
+var serviceName = Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME")
+    ?? "untranslatable-dotnet";
+var serviceVersion = Environment.GetEnvironmentVariable("OTEL_SERVICE_VERSION")
+    ?? "0.1.0";
+var deploymentEnv = Environment.GetEnvironmentVariable("OTEL_DEPLOYMENT_ENVIRONMENT")
+    ?? "local";
+
+// Wire OTel logs into the .NET logging pipeline.
+// ILogger<T> calls in controllers automatically flow to Loki via OTLP with
+// trace_id/span_id stamped on each record when emitted inside an active span.
+Action<ResourceBuilder> configureResource = r => r
+    .AddService(serviceName, serviceVersion: serviceVersion)
+    .AddAttributes(new Dictionary<string, object>
+    {
+        ["deployment.environment"] = deploymentEnv,
+    });
+
+builder.Logging.AddOpenTelemetry(options =>
+{
+    options.IncludeFormattedMessage = true;
+    options.IncludeScopes = true;
+    var rb = ResourceBuilder.CreateDefault();
+    configureResource(rb);
+    options.SetResourceBuilder(rb);
+    options.AddOtlpExporter();
+});
 
 builder.Services.AddOpenTelemetry()
-    .ConfigureResource(r => r.AddService(serviceName))
+    .ConfigureResource(configureResource)
     .WithTracing(b => b
         .AddAspNetCoreInstrumentation()
         .AddSource(serviceName)
@@ -31,9 +57,6 @@ builder.Services.AddOpenTelemetry()
         .AddMeter(Metrics.MeterName)
         .AddOtlpExporter());
 
-// Facade registered with a factory so that a resolve-time failure (e.g.
-// TracerProvider missing because OTel registration was skipped) falls back
-// gracefully to the no-op instead of crashing on first request.
 builder.Services.AddSingleton<IWordsTelemetry>(sp =>
 {
     try
@@ -49,7 +72,6 @@ builder.Services.AddSingleton<IWordsTelemetry>(sp =>
     }
 });
 
-// App-start counter — guarded so a metrics-provider failure never aborts startup.
 try { Metrics.App.Start.Add(1); }
 catch { /* telemetry must never crash the application */ }
 
@@ -67,9 +89,7 @@ app.MapControllers();
 
 app.Run();
 
-// App-stop counter — guarded for the same reason.
 try { Metrics.App.Stop.Add(1); }
 catch { /* telemetry must never crash the application */ }
 
-// Required by WebApplicationFactory<Program> in integration tests.
 public partial class Program { }
