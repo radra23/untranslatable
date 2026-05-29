@@ -108,7 +108,7 @@ class _NullTracer:
     """Tracer that produces no-op spans."""
 
     @contextmanager
-    def start_as_current_span(self, name: str, **_: object) -> Generator[_NullSpan, None, None]:
+    def start_as_current_span(self, name: str, **_: object) -> Generator[_NullSpan]:
         """Yield a no-op span without recording anything.
 
         Parameters
@@ -185,7 +185,6 @@ def _setup() -> None:
     from opentelemetry._logs import set_logger_provider
     from opentelemetry.exporter.otlp.proto.grpc.log_exporter import OTLPLogExporter
     from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
     from opentelemetry.sdk.logs import LoggerProvider, LoggingHandler
     from opentelemetry.sdk.logs.export import BatchLogRecordProcessor
     from opentelemetry.sdk.metrics import MeterProvider
@@ -194,11 +193,13 @@ def _setup() -> None:
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-    resource = Resource.create({
-        "service.name": os.environ.get("OTEL_SERVICE_NAME", SERVICE_NAME),
-        "service.version": os.environ.get("OTEL_SERVICE_VERSION", "0.1.0"),
-        "deployment.environment": os.environ.get("OTEL_DEPLOYMENT_ENVIRONMENT", "local"),
-    })
+    resource = Resource.create(
+        {
+            "service.name": os.environ.get("OTEL_SERVICE_NAME", SERVICE_NAME),
+            "service.version": os.environ.get("OTEL_SERVICE_VERSION", "0.1.0"),
+            "deployment.environment": os.environ.get("OTEL_DEPLOYMENT_ENVIRONMENT", "local"),
+        }
+    )
 
     # --- Traces ---
     tracer_provider = TracerProvider(resource=resource)
@@ -211,9 +212,7 @@ def _setup() -> None:
     meter_provider = MeterProvider(
         resource=resource,
         metric_readers=[
-            PeriodicExportingMetricReader(
-                OTLPMetricExporter(endpoint=OTLP_ENDPOINT, insecure=True)
-            )
+            PeriodicExportingMetricReader(OTLPMetricExporter(endpoint=OTLP_ENDPOINT, insecure=True))
         ],
     )
     _metrics.set_meter_provider(meter_provider)
