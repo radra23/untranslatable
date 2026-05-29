@@ -7,10 +7,10 @@ from functools import lru_cache
 from os.path import dirname, join
 from typing import cast
 
+from data.types import Word
+
 # Import the facade tracer — gracefully degrades to a no-op if OTel is unavailable.
 from telemetry import tracer
-
-from data.types import Word
 
 _DATA_FILE = join(dirname(__file__), "data.json")
 
