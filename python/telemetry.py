@@ -1,7 +1,7 @@
 """Telemetry facade for the untranslatable API.
 
 All OpenTelemetry wiring lives here. The rest of the application imports
-``tracer`` and ``word_counter`` from this module — it never touches OTel
+``tracer``, ``word_counter``, and ``logger`` from this module — it never touches OTel
 directly — so the provider can be swapped in one place without changing
 any business logic.
 
@@ -166,55 +166,79 @@ logger: _LoggerLike = _NullLogger()
 def _setup() -> None:
     """Configure OTel providers and assign the module-level facade objects.
 
-    Sets up a ``TracerProvider`` and a ``MeterProvider``, both backed by
-    OTLP gRPC exporters, then reassigns the module-level ``tracer`` and
-    ``word_counter`` to the live OTel implementations.
-
-    Called exactly once at import time; the caller catches all exceptions.
+    Sets up ``TracerProvider``, ``MeterProvider``, and ``LoggerProvider``,
+    all backed by OTLP gRPC exporters, then reassigns the module-level
+    ``tracer``, ``word_counter``, and ``logger`` to live OTel objects.
+    Also attaches a ``LoggingHandler`` to the root Python logger so that
+    Flask internals and third-party library log output is forwarded to Loki.
 
     Raises
     ------
     Exception
         Re-raised to the module-level try/except so the fallback stubs
-        remain in place.
+        remain in place on failure.
     """
-    global tracer, word_counter  # noqa: PLW0603
+    global tracer, word_counter, logger  # noqa: PLW0603
 
     from opentelemetry import metrics as _metrics
     from opentelemetry import trace as _trace
+    from opentelemetry._logs import set_logger_provider
+    from opentelemetry.exporter.otlp.proto.grpc.log_exporter import OTLPLogExporter
     from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
     from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+    from opentelemetry.sdk.logs import LoggerProvider, LoggingHandler
+    from opentelemetry.sdk.logs.export import BatchLogRecordProcessor
     from opentelemetry.sdk.metrics import MeterProvider
     from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-    from opentelemetry.sdk.resources import SERVICE_NAME as _SN_KEY
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-    resource = Resource(attributes={_SN_KEY: SERVICE_NAME})
+    resource = Resource.create({
+        "service.name": os.environ.get("OTEL_SERVICE_NAME", SERVICE_NAME),
+        "service.version": os.environ.get("OTEL_SERVICE_VERSION", "0.1.0"),
+        "deployment.environment": os.environ.get("OTEL_DEPLOYMENT_ENVIRONMENT", "local"),
+    })
 
+    # --- Traces ---
     tracer_provider = TracerProvider(resource=resource)
     tracer_provider.add_span_processor(
         BatchSpanProcessor(OTLPSpanExporter(endpoint=OTLP_ENDPOINT, insecure=True))
     )
     _trace.set_tracer_provider(tracer_provider)
 
+    # --- Metrics ---
     meter_provider = MeterProvider(
         resource=resource,
         metric_readers=[
-            PeriodicExportingMetricReader(OTLPMetricExporter(endpoint=OTLP_ENDPOINT, insecure=True))
+            PeriodicExportingMetricReader(
+                OTLPMetricExporter(endpoint=OTLP_ENDPOINT, insecure=True)
+            )
         ],
     )
     _metrics.set_meter_provider(meter_provider)
 
-    # The OTel Tracer stubs use _AgnosticContextManager and specific kwargs
-    # rather than AbstractContextManager/**kwargs, so the structural check
-    # fails even though both satisfy the Protocol at runtime.
+    # --- Logs ---
+    logger_provider = LoggerProvider(resource=resource)
+    logger_provider.add_log_record_processor(
+        BatchLogRecordProcessor(OTLPLogExporter(endpoint=OTLP_ENDPOINT, insecure=True))
+    )
+    set_logger_provider(logger_provider)
+
+    # Attach OTel handler to root Python logger — all logging.* calls in
+    # Flask, Werkzeug, and app modules now flow through to Loki.
+    _otel_handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
+    logging.getLogger().addHandler(_otel_handler)
+
+    # The OTel Tracer and logging.Logger don't satisfy the Protocols at the
+    # type-checker level (different context manager and method signatures),
+    # but they do at runtime — suppress the assignment warnings.
     tracer = _trace.get_tracer(__name__)  # type: ignore[assignment]
     word_counter = _metrics.get_meter(__name__).create_counter(
         "words.requests",
         description="Number of words returned, labelled by language.",
     )
+    logger = logging.getLogger(SERVICE_NAME)  # type: ignore[assignment]
 
     _log.info("[telemetry] OpenTelemetry initialised (endpoint: %s)", OTLP_ENDPOINT)
 
