@@ -17,6 +17,7 @@ def _null_telemetry(monkeypatch):
     """
     monkeypatch.setattr(telemetry, "tracer", telemetry._NullTracer())
     monkeypatch.setattr(telemetry, "word_counter", telemetry._NullCounter())
+    monkeypatch.setattr(telemetry, "logger", telemetry._NullLogger())
 
 
 @pytest.fixture()
