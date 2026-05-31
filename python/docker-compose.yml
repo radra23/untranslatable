@@ -72,6 +72,40 @@ services:
       - loki
       - tempo
 
+  express-api:
+    build:
+      context: ../typescript
+      dockerfile: apps/express-api/Dockerfile
+    networks:
+      - backend
+    ports:
+      - "8001:8001"
+    environment:
+      OTLP_ENDPOINT: http://otelcol:4317
+      OTEL_SERVICE_NAME: untranslatable-express
+      OTEL_SERVICE_VERSION: "0.1.0"
+      OTEL_DEPLOYMENT_ENVIRONMENT: local
+    depends_on:
+      otelcol:
+        condition: service_healthy
+
+  fastify-api:
+    build:
+      context: ../typescript
+      dockerfile: apps/fastify-api/Dockerfile
+    networks:
+      - backend
+    ports:
+      - "8002:8002"
+    environment:
+      OTLP_ENDPOINT: http://otelcol:4317
+      OTEL_SERVICE_NAME: untranslatable-fastify
+      OTEL_SERVICE_VERSION: "0.1.0"
+      OTEL_DEPLOYMENT_ENVIRONMENT: local
+    depends_on:
+      otelcol:
+        condition: service_healthy
+
 networks:
   backend:
 

@@ -1,0 +1,19 @@
+{
+  "name": "untranslatable-fastify",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/instrumentation-fastify": "^0.44.0",
+    "@opentelemetry/instrumentation-http": "^0.57.0",
+    "@untranslatable/repository": "workspace:*",
+    "@untranslatable/telemetry": "workspace:*",
+    "fastify": "^4.29.0"
+  }
+}
