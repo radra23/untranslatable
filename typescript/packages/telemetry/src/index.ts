@@ -1,0 +1,127 @@
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-grpc';
+import { Resource } from '@opentelemetry/resources';
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
+import { trace, metrics } from '@opentelemetry/api';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import type { Instrumentation } from '@opentelemetry/instrumentation';
+import type { AnyValueMap } from '@opentelemetry/api-logs';
+
+// ---- Interfaces --------------------------------------------------------
+
+export interface AppSpan {
+  setAttributes(attrs: Record<string, string | number | boolean>): void;
+  addEvent(name: string): void;
+  recordException(err: Error): void;
+  setStatus(status: { code: number }): void;
+  end(): void;
+}
+
+export interface AppTracer {
+  startActiveSpan<T>(name: string, fn: (span: AppSpan) => T): T;
+}
+
+export interface AppCounter {
+  add(amount: number, attrs?: Record<string, string>): void;
+}
+
+export interface AppLogger {
+  info(msg: string, attrs?: Record<string, unknown>): void;
+  warning(msg: string, attrs?: Record<string, unknown>): void;
+  error(msg: string, attrs?: Record<string, unknown>): void;
+}
+
+export interface StartTelemetryOptions {
+  instrumentations: Instrumentation[];
+}
+
+// ---- No-op stubs -------------------------------------------------------
+
+class NullSpan implements AppSpan {
+  setAttributes(_: Record<string, string | number | boolean>): void {}
+  addEvent(_: string): void {}
+  recordException(_: Error): void {}
+  setStatus(_: { code: number }): void {}
+  end(): void {}
+}
+
+export class NullTracer implements AppTracer {
+  startActiveSpan<T>(_name: string, fn: (span: AppSpan) => T): T {
+    return fn(new NullSpan());
+  }
+}
+
+export class NullCounter implements AppCounter {
+  add(_amount: number, _attrs?: Record<string, string>): void {}
+}
+
+export class NullLogger implements AppLogger {
+  info(_msg: string, _attrs?: Record<string, unknown>): void {}
+  warning(_msg: string, _attrs?: Record<string, unknown>): void {}
+  error(_msg: string, _attrs?: Record<string, unknown>): void {}
+}
+
+// ---- Module-level facades (start as no-ops) ----------------------------
+
+export let tracer: AppTracer = new NullTracer();
+export let wordCounter: AppCounter = new NullCounter();
+export let logger: AppLogger = new NullLogger();
+
+// ---- Setup -------------------------------------------------------------
+
+export function startTelemetry(options: StartTelemetryOptions): void {
+  try {
+    const endpoint = process.env.OTLP_ENDPOINT ?? 'http://localhost:4317';
+    const serviceName = process.env.OTEL_SERVICE_NAME ?? 'untranslatable-node';
+
+    const resource = new Resource({
+      [ATTR_SERVICE_NAME]: serviceName,
+      [ATTR_SERVICE_VERSION]: process.env.OTEL_SERVICE_VERSION ?? '0.1.0',
+      'deployment.environment': process.env.OTEL_DEPLOYMENT_ENVIRONMENT ?? 'local',
+    });
+
+    // Logs — configure LoggerProvider separately from NodeSDK
+    const loggerProvider = new LoggerProvider({ resource });
+    loggerProvider.addLogRecordProcessor(
+      new BatchLogRecordProcessor(new OTLPLogExporter({ url: endpoint }))
+    );
+    logs.setGlobalLoggerProvider(loggerProvider);
+
+    // Traces + Metrics via NodeSDK
+    const sdk = new NodeSDK({
+      resource,
+      traceExporter: new OTLPTraceExporter({ url: endpoint }),
+      metricReader: new PeriodicExportingMetricReader({
+        exporter: new OTLPMetricExporter({ url: endpoint }),
+      }),
+      instrumentations: options.instrumentations,
+    });
+    sdk.start();
+
+    // Reassign facades to live OTel objects
+    tracer = trace.getTracer(serviceName) as unknown as AppTracer;
+    wordCounter = metrics
+      .getMeter(serviceName)
+      .createCounter('words.requests', {
+        description: 'Number of words returned, labelled by language.',
+      }) as unknown as AppCounter;
+
+    const otelLogger = logs.getLogger(serviceName);
+    logger = {
+      info: (msg, attrs) =>
+        otelLogger.emit({ severityNumber: SeverityNumber.INFO, severityText: 'INFO', body: msg, attributes: attrs as AnyValueMap | undefined }),
+      warning: (msg, attrs) =>
+        otelLogger.emit({ severityNumber: SeverityNumber.WARN, severityText: 'WARN', body: msg, attributes: attrs as AnyValueMap | undefined }),
+      error: (msg, attrs) =>
+        otelLogger.emit({ severityNumber: SeverityNumber.ERROR, severityText: 'ERROR', body: msg, attributes: attrs as AnyValueMap | undefined }),
+    };
+
+    console.log(`[telemetry] OpenTelemetry initialised (endpoint: ${endpoint})`);
+  } catch (err) {
+    console.warn('[telemetry] OTel setup failed — running without instrumentation:', err);
+  }
+}
