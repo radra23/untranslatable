@@ -14,11 +14,10 @@ export function createApp(repo: WordsRepository = new WordsRepository()): Fastif
     return { status: 'ok' };
   });
 
-  app.get('/words', async (request: FastifyRequest, reply: FastifyReply) => {
+  app.get<{ Querystring: { language?: string } }>('/words', async (request, reply) => {
     return tracer.startActiveSpan('words.list', span => {
       try {
-        const q = request.query as Record<string, string | undefined>;
-        const language = typeof q.language === 'string' ? q.language : undefined;
+        const language = request.query.language;
         const words = repo.getAllWords(language);
         span.setAttributes({ 'words.count': words.length });
         if (language) span.setAttributes({ 'words.language': language });
