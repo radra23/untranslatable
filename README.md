@@ -11,7 +11,7 @@ An untranslatable word has no equivalent when moved into another language. The t
 
 ## What is this?
 
-This repository demonstrates **OpenTelemetry (OTel) instrumentation** across two parallel API implementations — one in **.NET 9** and one in **Python/Flask** — serving a collection of untranslatable words from various languages. Both APIs expose the same endpoints and produce the same telemetry signals, illustrating how OTel provides a consistent observability layer regardless of the technology stack.
+This repository demonstrates **OpenTelemetry (OTel) instrumentation** across three parallel API implementations — in **Python/Flask**, **TypeScript** (Express + Fastify), and **.NET 9** — serving a collection of untranslatable words from various languages. All APIs expose the same endpoints and produce the same telemetry signals, illustrating how OTel provides a consistent observability layer regardless of the technology stack.
 
 ![Architecture diagram](/assets/image2.png)
 
@@ -23,7 +23,7 @@ Telemetry is exported via **OTLP** to an [OpenTelemetry Collector](https://opent
 
 - **Distributed tracing** — automatic HTTP instrumentation plus manual spans with events and attributes
 - **Metrics** — request counters and duration histograms exported via OTLP
-- **Consistent API** across Python and .NET — same endpoints, same OTel signals
+- **Consistent API** across Python, TypeScript, and .NET — same endpoints, same OTel signals
 - **OTLP-first** — a single exporter pipeline works with every modern observability backend
 - **Logs** — all log output flows through OTel to Loki; trace and log records are correlated by trace ID
 - **Docker Compose** — spins up the full Grafana LGTM stack (Loki + Grafana + Tempo + Prometheus) locally with one command
@@ -38,6 +38,8 @@ Telemetry is exported via **OTLP** to an [OpenTelemetry Collector](https://opent
 | `GET` | `/words` | All words (or filtered by `?language=<code>`) |
 | `GET` | `/words/random` | A random untranslatable word |
 | `GET` | `/healthz` | Health check |
+
+> Express API: `http://localhost:8001` · Fastify API: `http://localhost:8002`
 
 ### Language codes
 
@@ -64,12 +66,19 @@ Telemetry is exported via **OTLP** to an [OpenTelemetry Collector](https://opent
 untranslatable/
 ├── python/                         # Python / Flask implementation
 │   ├── app.py                      # Application entry point + OTel setup
+│   ├── telemetry.py                # OTel facade (tracer, wordCounter, logger)
 │   ├── data/
 │   │   ├── file_reader.py          # Cached JSON loader with manual spans
 │   │   └── data.json               # Word dataset
-│   ├── docker-compose.yml          # Grafana LGTM stack + OTel Collector
-│   ├── otel-collector-config.yml   # Collector pipeline configuration
-│   └── setup.cfg                   # Package metadata & dependencies
+│   ├── docker-compose.yml          # Grafana LGTM stack + OTel Collector + TS services
+│   └── otel-collector-config.yml   # Collector pipeline configuration
+├── typescript/                     # TypeScript pnpm monorepo
+│   ├── packages/
+│   │   ├── telemetry/              # @untranslatable/telemetry — OTel facades + stubs
+│   │   └── repository/             # @untranslatable/repository — WordsRepository
+│   └── apps/
+│       ├── express-api/            # Express API, port 8001
+│       └── fastify-api/            # Fastify API, port 8002
 └── dotnet/                         # .NET 9 / ASP.NET Core implementation
     └── src/
         ├── Untranslatable.Api/     # Controllers, Swagger, OTel setup
@@ -84,6 +93,7 @@ untranslatable/
 ### Prerequisites
 
 - **Python** — Python 3.13 and `pip`
+- **TypeScript** — Node.js 20+ and `pnpm`
 - **.NET** — .NET 9 SDK (`dotnet --version` should show `9.x`)
 - **Docker** — for running the Grafana LGTM stack and OTel Collector
 
@@ -127,6 +137,24 @@ To point the .NET app at a remote collector, set:
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://<collector-host>:4317
 ```
 
+### 4 — Run the TypeScript APIs
+
+```bash
+cd typescript
+pnpm install
+pnpm build
+node apps/express-api/dist/index.js   # http://localhost:8001
+node apps/fastify-api/dist/index.js   # http://localhost:8002
+```
+
+Both services start without a collector — telemetry falls back to no-ops until the stack is running.
+
+To run tests:
+
+```bash
+cd typescript && pnpm test
+```
+
 ---
 
 ## OpenTelemetry instrumentation
@@ -157,6 +185,14 @@ Both implementations follow the same OTel patterns:
 - `builder.Logging.AddOpenTelemetry()` — `ILogger<T>` calls are forwarded to Loki with `trace_id`/`span_id` automatically stamped on each record
 - `TimeMeasurement` records endpoint duration in **milliseconds** via a `Histogram<double>`
 
+### TypeScript OTel highlights (`packages/telemetry/` · `apps/express-api/` · `apps/fastify-api/`)
+
+- Shared `@untranslatable/telemetry` package: `startTelemetry({ instrumentations })` configures `TracerProvider`, `MeterProvider`, and `LoggerProvider` backed by OTLP gRPC exporters, then reassigns module-level facades (`tracer`, `wordCounter`, `logger`)
+- No-op stubs are the default; live OTel objects replace them after `startTelemetry()` succeeds — the app always starts
+- `instrument.ts` imported first in each app's entry point — in CommonJS output, `require('./instrument')` runs synchronously before Express/Fastify loads, so `HttpInstrumentation` patches the `http` module in time
+- `wordCounter` uses the same metric name (`words.requests`) and `language` label as Python and .NET — all four services feed one Prometheus query
+- Log records emitted inside an active span carry `trace_id` and `span_id` automatically (Node OTel SDK stamps them), enabling Loki → Tempo correlation
+
 ---
 
 ## Configuration
@@ -181,6 +217,16 @@ Both implementations follow the same OTel patterns:
 | `OTEL_SERVICE_NAME` | `untranslatable-dotnet` | Service name shown in Grafana |
 | `OTEL_SERVICE_VERSION` | `0.1.0` | Service version shown in Grafana |
 | `OTEL_DEPLOYMENT_ENVIRONMENT` | `local` | Deployment environment label |
+
+### TypeScript (both apps)
+
+| Environment variable | Default | Description |
+|----------------------|---------|-------------|
+| `OTLP_ENDPOINT` | `http://localhost:4317` | OTLP gRPC collector endpoint |
+| `OTEL_SERVICE_NAME` | `untranslatable-node` | Service name shown in Grafana |
+| `OTEL_SERVICE_VERSION` | `0.1.0` | Service version |
+| `OTEL_DEPLOYMENT_ENVIRONMENT` | `local` | Deployment environment label |
+| `PORT` | `8001` (Express) / `8002` (Fastify) | Listen port |
 
 ---
 
