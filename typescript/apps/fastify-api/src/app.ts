@@ -18,11 +18,11 @@ export function createApp(repo: WordsRepository = new WordsRepository()): Fastif
     return tracer.startActiveSpan('words.list', span => {
       try {
         const language = request.query.language;
+        const langLabel = language ?? 'all';
         const words = repo.getAllWords(language);
-        span.setAttributes({ 'words.count': words.length });
-        if (language) span.setAttributes({ 'words.language': language });
-        wordCounter.add(words.length, { language: language ?? 'all' });
-        logger.info('Words listed', { count: words.length, language: language ?? 'all' });
+        span.setAttributes({ 'words.count': words.length, ...(language && { 'words.language': language }) });
+        wordCounter.add(words.length, { language: langLabel });
+        logger.info('Words listed', { count: words.length, language: langLabel });
         return words;
       } catch (err) {
         span.recordException(err as Error);
