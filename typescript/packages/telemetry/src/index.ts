@@ -11,8 +11,6 @@ import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import type { AnyValueMap } from '@opentelemetry/api-logs';
 
-// ---- Interfaces --------------------------------------------------------
-
 export interface AppSpan {
   setAttributes(attrs: Record<string, string | number | boolean>): void;
   addEvent(name: string): void;
@@ -39,8 +37,6 @@ export interface StartTelemetryOptions {
   instrumentations: Instrumentation[];
 }
 
-// ---- No-op stubs -------------------------------------------------------
-
 class NullSpan implements AppSpan {
   setAttributes(_: Record<string, string | number | boolean>): void {}
   addEvent(_: string): void {}
@@ -65,15 +61,24 @@ export class NullLogger implements AppLogger {
   error(_msg: string, _attrs?: Record<string, unknown>): void {}
 }
 
-// ---- Module-level facades (start as no-ops) ----------------------------
-
 export let tracer: AppTracer = new NullTracer();
 export let wordCounter: AppCounter = new NullCounter();
 export let logger: AppLogger = new NullLogger();
 
-// ---- Setup -------------------------------------------------------------
+let started = false;
+let _sdk: NodeSDK | null = null;
+let _loggerProvider: LoggerProvider | null = null;
+
+export async function stopTelemetry(): Promise<void> {
+  const flushes: Promise<void>[] = [];
+  if (_loggerProvider) flushes.push(_loggerProvider.shutdown());
+  if (_sdk) flushes.push(_sdk.shutdown());
+  await Promise.all(flushes);
+}
 
 export function startTelemetry(options: StartTelemetryOptions): void {
+  if (started) return;
+  started = true;
   try {
     const endpoint = process.env.OTLP_ENDPOINT ?? 'http://localhost:4317';
     const serviceName = process.env.OTEL_SERVICE_NAME ?? 'untranslatable-node';
@@ -85,14 +90,13 @@ export function startTelemetry(options: StartTelemetryOptions): void {
     });
 
     // Logs — configure LoggerProvider separately from NodeSDK
-    const loggerProvider = new LoggerProvider({ resource });
-    loggerProvider.addLogRecordProcessor(
+    _loggerProvider = new LoggerProvider({ resource });
+    _loggerProvider.addLogRecordProcessor(
       new BatchLogRecordProcessor(new OTLPLogExporter({ url: endpoint }))
     );
-    logs.setGlobalLoggerProvider(loggerProvider);
+    logs.setGlobalLoggerProvider(_loggerProvider);
 
-    // Traces + Metrics via NodeSDK
-    const sdk = new NodeSDK({
+    _sdk = new NodeSDK({
       resource,
       traceExporter: new OTLPTraceExporter({ url: endpoint }),
       metricReader: new PeriodicExportingMetricReader({
@@ -100,9 +104,8 @@ export function startTelemetry(options: StartTelemetryOptions): void {
       }),
       instrumentations: options.instrumentations,
     });
-    sdk.start();
+    _sdk.start();
 
-    // Reassign facades to live OTel objects
     tracer = trace.getTracer(serviceName) as unknown as AppTracer;
     wordCounter = metrics
       .getMeter(serviceName)
@@ -119,6 +122,9 @@ export function startTelemetry(options: StartTelemetryOptions): void {
       error: (msg, attrs) =>
         otelLogger.emit({ severityNumber: SeverityNumber.ERROR, severityText: 'ERROR', body: msg, attributes: attrs as AnyValueMap | undefined }),
     };
+
+    process.once('SIGTERM', () => void stopTelemetry().then(() => process.exit(0)));
+    process.once('SIGINT', () => void stopTelemetry().then(() => process.exit(0)));
 
     console.log(`[telemetry] OpenTelemetry initialised (endpoint: ${endpoint})`);
   } catch (err) {

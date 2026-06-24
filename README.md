@@ -190,7 +190,7 @@ Both implementations follow the same OTel patterns:
 - Shared `@untranslatable/telemetry` package: `startTelemetry({ instrumentations })` configures `TracerProvider`, `MeterProvider`, and `LoggerProvider` backed by OTLP gRPC exporters, then reassigns module-level facades (`tracer`, `wordCounter`, `logger`)
 - No-op stubs are the default; live OTel objects replace them after `startTelemetry()` succeeds — the app always starts
 - `instrument.ts` imported first in each app's entry point — in CommonJS output, `require('./instrument')` runs synchronously before Express/Fastify loads, so `HttpInstrumentation` patches the `http` module in time
-- `wordCounter` uses the same metric name (`words.requests`) and `language` label as Python and .NET — all four services feed one Prometheus query
+- `wordCounter` uses the same metric name (`words.requests`) and `language` label as Python — TypeScript and Python share one Prometheus query; .NET exports under a different metric name
 - Log records emitted inside an active span carry `trace_id` and `span_id` automatically (Node OTel SDK stamps them), enabling Loki → Tempo correlation
 
 ---
