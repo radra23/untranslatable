@@ -20,7 +20,7 @@ export function createApp(repo: WordsRepository = new WordsRepository()): Fastif
         const language = request.query.language;
         const langLabel = language ?? 'all';
         const words = repo.getAllWords(language);
-        span.setAttributes({ 'words.count': words.length, ...(language && { 'words.language': language }) });
+        span.setAttributes({ 'words.count': words.length, ...(language !== undefined ? { 'words.language': language } : {}) });
         wordCounter.add(words.length, { language: langLabel });
         logger.info('Words listed', { count: words.length, language: langLabel });
         return words;

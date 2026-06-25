@@ -5,6 +5,7 @@ import { WordsRepository } from '@untranslatable/repository';
 
 export function createApp(repo: WordsRepository = new WordsRepository()): express.Application {
   const app = express();
+  // No body parser: all routes are read-only GET endpoints
 
   app.get('/', (_req: Request, res: Response) => {
     res.json({ message: 'Welcome to the Untranslatable API (Express)' });
@@ -20,7 +21,7 @@ export function createApp(repo: WordsRepository = new WordsRepository()): expres
         const language = typeof req.query.language === 'string' ? req.query.language : undefined;
         const langLabel = language ?? 'all';
         const words = repo.getAllWords(language);
-        span.setAttributes({ 'words.count': words.length, ...(language && { 'words.language': language }) });
+        span.setAttributes({ 'words.count': words.length, ...(language !== undefined ? { 'words.language': language } : {}) });
         wordCounter.add(words.length, { language: langLabel });
         logger.info('Words listed', { count: words.length, language: langLabel });
         res.json(words);
