@@ -70,10 +70,8 @@ let _sdk: NodeSDK | null = null;
 let _loggerProvider: LoggerProvider | null = null;
 
 export async function stopTelemetry(): Promise<void> {
-  const flushes: Promise<void>[] = [];
-  if (_loggerProvider) flushes.push(_loggerProvider.shutdown());
-  if (_sdk) flushes.push(_sdk.shutdown());
-  await Promise.all(flushes);
+  if (_sdk) await _sdk.shutdown();
+  if (_loggerProvider) await _loggerProvider.shutdown();
 }
 
 export function startTelemetry(options: StartTelemetryOptions): void {
@@ -123,8 +121,9 @@ export function startTelemetry(options: StartTelemetryOptions): void {
         otelLogger.emit({ severityNumber: SeverityNumber.ERROR, severityText: 'ERROR', body: msg, attributes: attrs as AnyValueMap | undefined }),
     };
 
-    process.once('SIGTERM', () => void stopTelemetry().then(() => process.exit(0)));
-    process.once('SIGINT', () => void stopTelemetry().then(() => process.exit(0)));
+    const handleSignal = () => void stopTelemetry().finally(() => process.exit(0));
+    process.once('SIGTERM', handleSignal);
+    process.once('SIGINT', handleSignal);
 
     console.log(`[telemetry] OpenTelemetry initialised (endpoint: ${endpoint})`);
   } catch (err) {
