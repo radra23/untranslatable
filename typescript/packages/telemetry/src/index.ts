@@ -65,7 +65,7 @@ export let tracer: AppTracer = new NullTracer();
 export let wordCounter: AppCounter = new NullCounter();
 export let logger: AppLogger = new NullLogger();
 
-let started = false;
+let started = false; // intentionally never reset: re-initialisation after stopTelemetry() is unsupported
 let _sdk: NodeSDK | null = null;
 let _loggerProvider: LoggerProvider | null = null;
 
@@ -121,12 +121,12 @@ export function startTelemetry(options: StartTelemetryOptions): void {
         otelLogger.emit({ severityNumber: SeverityNumber.ERROR, severityText: 'ERROR', body: msg, attributes: attrs as AnyValueMap | undefined }),
     };
 
-    const handleSignal = () => void stopTelemetry().finally(() => process.exit(0));
-    process.once('SIGTERM', handleSignal);
-    process.once('SIGINT', handleSignal);
-
     console.log(`[telemetry] OpenTelemetry initialised (endpoint: ${endpoint})`);
   } catch (err) {
     console.warn('[telemetry] OTel setup failed — running without instrumentation:', err);
+  } finally {
+    const handleSignal = () => void stopTelemetry().finally(() => process.exit(0));
+    process.once('SIGTERM', handleSignal);
+    process.once('SIGINT', handleSignal);
   }
 }
