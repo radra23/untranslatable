@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import { createApp } from './app';
+import { WordsRepository } from '@untranslatable/repository';
 
 const app = createApp();
 
@@ -47,5 +48,26 @@ describe('Express API routes', () => {
     expect(res.body).toHaveProperty('language');
     expect(res.body).toHaveProperty('word');
     expect(res.body).toHaveProperty('meaning');
+  });
+});
+
+describe('Express API error handling', () => {
+  const throwingRepo = {
+    getAllWords: (): never => { throw new Error('db error'); },
+    getRandomWord: (): never => { throw new Error('db error'); },
+  } as unknown as WordsRepository;
+
+  it('GET /words returns 500 when repo throws', async () => {
+    const app = createApp(throwingRepo);
+    const res = await request(app).get('/words');
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: 'Internal server error' });
+  });
+
+  it('GET /words/random returns 500 when repo throws', async () => {
+    const app = createApp(throwingRepo);
+    const res = await request(app).get('/words/random');
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: 'Internal server error' });
   });
 });

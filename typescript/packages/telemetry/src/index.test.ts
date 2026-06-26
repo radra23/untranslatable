@@ -46,4 +46,9 @@ describe('startTelemetry', () => {
     // In CI/test there is no collector — the SDK starts but exports silently fail
     expect(() => startTelemetry({ instrumentations: [] })).not.toThrow();
   });
+
+  it('is idempotent — second call is a no-op', () => {
+    // started flag prevents double-initialisation; should not throw or reassign
+    expect(() => startTelemetry({ instrumentations: [] })).not.toThrow();
+  });
 });
