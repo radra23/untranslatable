@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createApp } from './app';
+import { WordsRepository } from '@untranslatable/repository';
 
 describe('Fastify API routes', () => {
   let app: ReturnType<typeof createApp>;
@@ -58,5 +59,28 @@ describe('Fastify API routes', () => {
     expect(body).toHaveProperty('language');
     expect(body).toHaveProperty('word');
     expect(body).toHaveProperty('meaning');
+  });
+});
+
+describe('Fastify API error handling', () => {
+  const throwingRepo = {
+    getAllWords: (): never => { throw new Error('db error'); },
+    getRandomWord: (): never => { throw new Error('db error'); },
+  } as unknown as WordsRepository;
+
+  it('GET /words returns 500 when repo throws', async () => {
+    const app = createApp(throwingRepo);
+    const res = await app.inject({ method: 'GET', url: '/words' });
+    await app.close();
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body)).toEqual({ error: 'Internal server error' });
+  });
+
+  it('GET /words/random returns 500 when repo throws', async () => {
+    const app = createApp(throwingRepo);
+    const res = await app.inject({ method: 'GET', url: '/words/random' });
+    await app.close();
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body)).toEqual({ error: 'Internal server error' });
   });
 });

@@ -37,4 +37,9 @@ describe('WordsRepository', () => {
     const results = new Set(Array.from({ length: 20 }, () => repo.getRandomWord().word));
     expect(results.size).toBeGreaterThan(1);
   });
+
+  it('getRandomWord() throws when the repository is empty', () => {
+    const empty = new WordsRepository([]);
+    expect(() => empty.getRandomWord()).toThrowError('WordsRepository: no words available');
+  });
 });

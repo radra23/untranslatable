@@ -6,16 +6,22 @@ export interface Word {
   meaning: string;
 }
 
-const words: Word[] = rawData as Word[];
+const defaultWords: Word[] = rawData as Word[];
 
 export class WordsRepository {
+  private readonly words: Word[];
+
+  constructor(words: Word[] = defaultWords) {
+    this.words = words;
+  }
+
   getAllWords(language?: string): readonly Word[] {
-    if (language === undefined) return words;
-    return words.filter(w => w.language === language);
+    if (language === undefined) return this.words;
+    return this.words.filter(w => w.language === language);
   }
 
   getRandomWord(): Word {
-    if (words.length === 0) throw new Error('WordsRepository: no words available');
-    return words[Math.floor(Math.random() * words.length)];
+    if (this.words.length === 0) throw new Error('WordsRepository: no words available');
+    return this.words[Math.floor(Math.random() * this.words.length)];
   }
 }
