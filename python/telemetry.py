@@ -198,7 +198,7 @@ def _setup() -> None:
         {
             "service.name": os.environ.get("OTEL_SERVICE_NAME", SERVICE_NAME),
             "service.version": os.environ.get("OTEL_SERVICE_VERSION", "0.1.0"),
-            "deployment.environment": os.environ.get("OTEL_DEPLOYMENT_ENVIRONMENT", "local"),
+            "deployment.environment.name": os.environ.get("OTEL_DEPLOYMENT_ENVIRONMENT", "local"),
         }
     )
 

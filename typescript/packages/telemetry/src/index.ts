@@ -84,7 +84,7 @@ export function startTelemetry(options: StartTelemetryOptions): void {
     const resource = new Resource({
       [ATTR_SERVICE_NAME]: serviceName,
       [ATTR_SERVICE_VERSION]: process.env.OTEL_SERVICE_VERSION ?? '0.1.0',
-      'deployment.environment': process.env.OTEL_DEPLOYMENT_ENVIRONMENT ?? 'local',
+      'deployment.environment.name': process.env.OTEL_DEPLOYMENT_ENVIRONMENT ?? 'local',
     });
 
     // Logs — configure LoggerProvider separately from NodeSDK

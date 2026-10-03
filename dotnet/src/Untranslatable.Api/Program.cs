@@ -35,7 +35,7 @@ Action<ResourceBuilder> configureResource = r => r
     .AddService(serviceName, serviceVersion: serviceVersion)
     .AddAttributes(new Dictionary<string, object>
     {
-        ["deployment.environment"] = deploymentEnv,
+        ["deployment.environment.name"] = deploymentEnv,
     });
 
 builder.Logging.AddOpenTelemetry(options =>
@@ -74,10 +74,21 @@ builder.Services.AddSingleton<IWordsTelemetry>(sp =>
     }
 });
 
-try { Metrics.App.Start.Add(1); }
-catch { /* telemetry must never crash the application */ }
-
 var app = builder.Build();
+
+// Count start/stop from host lifetime events: the OTel MeterProvider only
+// exists while the host runs, so a measurement taken before Build() or after
+// Run() returns has no listener and is silently dropped.
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    try { Metrics.App.Start.Add(1); }
+    catch { /* telemetry must never crash the application */ }
+});
+app.Lifetime.ApplicationStopping.Register(() =>
+{
+    try { Metrics.App.Stop.Add(1); }
+    catch { /* telemetry must never crash the application */ }
+});
 
 if (app.Environment.IsDevelopment())
 {
@@ -90,8 +101,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-try { Metrics.App.Stop.Add(1); }
-catch { /* telemetry must never crash the application */ }
 
 public partial class Program { }
