@@ -22,7 +22,7 @@ namespace Untranslatable.Data
             var words = JsonDocument.Parse(File.ReadAllText(filePath)).Deserialize<IEnumerable<UntranslatableWord>>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             var wordsByLanguage = words.GroupBy(w => w.Language)
-                .ToDictionary(g => g.Key, g => (IEnumerable<UntranslatableWord>)g.ToArray(), StringComparer.OrdinalIgnoreCase);
+                .ToDictionary(g => g.Key, g => (IEnumerable<UntranslatableWord>)g.ToArray());
 
             return new WordsDataSource(wordsByLanguage);
         }
