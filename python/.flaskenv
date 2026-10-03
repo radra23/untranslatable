@@ -1,3 +1,4 @@
 FLASK_ENV=development
 FLASK_RUN_PORT=8000
 FLASK_DEBUG=0
+OTLP_ENDPOINT=http://localhost:4317
