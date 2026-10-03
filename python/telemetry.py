@@ -228,7 +228,13 @@ def _setup() -> None:
     # Attach OTel handler to root Python logger — all logging.* calls in
     # Flask, Werkzeug, and app modules now flow through to Loki.
     _otel_handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
-    logging.getLogger().addHandler(_otel_handler)
+    root_logger = logging.getLogger()
+    root_logger.addHandler(_otel_handler)
+    # The root logger defaults to WARNING, which filters INFO records before
+    # any handler sees them. Lower it to INFO, but leave a more verbose level
+    # (e.g. DEBUG) configured elsewhere untouched.
+    if root_logger.getEffectiveLevel() > logging.INFO:
+        root_logger.setLevel(logging.INFO)
 
     # The OTel Tracer and logging.Logger don't satisfy the Protocols at the
     # type-checker level (different context manager and method signatures),
