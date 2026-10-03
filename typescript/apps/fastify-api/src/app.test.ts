@@ -1,6 +1,7 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { createApp } from './app';
 import { WordsRepository } from '@untranslatable/repository';
+import { wordCounter } from '@untranslatable/telemetry';
 
 describe('Fastify API routes', () => {
   let app: ReturnType<typeof createApp>;
@@ -49,6 +50,22 @@ describe('Fastify API routes', () => {
     const res = await app.inject({ method: 'GET', url: '/words?language=xx' });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body)).toEqual([]);
+  });
+
+  it('GET /words?language=<unknown> labels the counter "other", not the raw input', async () => {
+    app = createApp();
+    const add = vi.spyOn(wordCounter, 'add');
+    await app.inject({ method: 'GET', url: '/words?language=not-a-language' });
+    expect(add).toHaveBeenCalledWith(0, { language: 'other' });
+    add.mockRestore();
+  });
+
+  it('GET /words?language=da keeps the dataset language as the counter label', async () => {
+    app = createApp();
+    const add = vi.spyOn(wordCounter, 'add');
+    await app.inject({ method: 'GET', url: '/words?language=da' });
+    expect(add).toHaveBeenCalledWith(expect.any(Number), { language: 'da' });
+    add.mockRestore();
   });
 
   it('GET /words/random returns a single word', async () => {

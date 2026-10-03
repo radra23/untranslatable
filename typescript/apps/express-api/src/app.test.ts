@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import { createApp } from './app';
 import { WordsRepository } from '@untranslatable/repository';
+import { wordCounter } from '@untranslatable/telemetry';
 
 const app = createApp();
 
@@ -40,6 +41,20 @@ describe('Express API routes', () => {
     const res = await request(app).get('/words?language=xx');
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
+  });
+
+  it('GET /words?language=<unknown> labels the counter "other", not the raw input', async () => {
+    const add = vi.spyOn(wordCounter, 'add');
+    await request(app).get('/words?language=not-a-language');
+    expect(add).toHaveBeenCalledWith(0, { language: 'other' });
+    add.mockRestore();
+  });
+
+  it('GET /words?language=da keeps the dataset language as the counter label', async () => {
+    const add = vi.spyOn(wordCounter, 'add');
+    await request(app).get('/words?language=da');
+    expect(add).toHaveBeenCalledWith(expect.any(Number), { language: 'da' });
+    add.mockRestore();
   });
 
   it('GET /words/random returns a single word', async () => {

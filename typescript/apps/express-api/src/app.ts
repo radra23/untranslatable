@@ -22,7 +22,10 @@ export function createApp(repo: WordsRepository = new WordsRepository()): expres
         const langLabel = language ?? 'all';
         const words = repo.getAllWords(language);
         span.setAttributes({ 'words.count': words.length, ...(language !== undefined ? { 'words.language': language } : {}) });
-        wordCounter.add(words.length, { language: langLabel });
+        // Metric labels must stay bounded: only a language that matched the dataset
+        // becomes a label; any other client-supplied value collapses to 'other'.
+        const metricLabel = language === undefined || words.length > 0 ? langLabel : 'other';
+        wordCounter.add(words.length, { language: metricLabel });
         logger.info('Words listed', { count: words.length, language: langLabel });
         res.json(words);
       } catch (err) {
